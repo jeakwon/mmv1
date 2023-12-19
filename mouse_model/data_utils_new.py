@@ -40,14 +40,6 @@ def nan_helper(y):
 
     return np.isnan(y), lambda z: z.nonzero()[0]
 
-# default is smoothing with 2 second, 48 ms per frame
-def smoothing_with_np_conv(nsp, size=int(2000/48)):
-    np_conv_res = []
-    for i in range(nsp.shape[1]):
-        np_conv_res.append(np.convolve(nsp[:, i], np.ones(size)/size, mode="same"))
-    np_conv_res = np.transpose(np.array(np_conv_res))
-    return np_conv_res
-
 
 class MouseDatasetSegNewBehav(Dataset):
     
@@ -56,7 +48,7 @@ class MouseDatasetSegNewBehav(Dataset):
         
         """
         Constructs the mouse dataset (that is already split into train/test set) for a certain experiment.
-        Works with the data in this folder: /hdd/aiwenxu/mouse-data-3-segment-split-70-30-48ms
+        Works with the data in this folder: ../data/mouse-data-3-segment-split-70-30-48ms
         More info on the data split see notebook may_1_data_split.ipynb
 
         Parameters
@@ -102,7 +94,7 @@ class MouseDatasetSegNewBehav(Dataset):
             raise ValueError("behav_mode must be one of orig, orig_prod, velo, velo_prod, all, all_prod")
         self.behav_mode = behav_mode
         
-        ROOT_DIR_SEG = "/hdd/aiwenxu/mouse-data-{}-segment-split-70-30-48ms".format(segment_num)
+        ROOT_DIR_SEG = "../data/mouse-data-{}-segment-split-70-30-48ms".format(segment_num)
         data_dir = "{}/{}".format(ROOT_DIR_SEG, file_id)
         
         # firing rate below 3 Hz
@@ -353,3 +345,36 @@ class MouseDatasetSegNewBehavNanInterp(Dataset):
         neural_spikes = torch.tensor(self.nsp[idx+self.seq_len-1+self.predict_offset], dtype=torch.float)
         
         return current_frame, current_behavior_var, neural_spikes
+
+def load_train_val_ds(args):
+    ds_list = [MouseDatasetSegNewBehav(file_id=args.file_id, segment_num=args.segment_num, seg_idx=i, data_split="train",
+                               vid_type=args.vid_type, seq_len=args.seq_len, predict_offset=1,
+                                       behav_mode=args.behav_mode, norm_mode="01")
+               for i in range(args.segment_num)]
+    train_ds, val_ds = [], []
+    for ds in ds_list:
+        train_ratio = 0.8
+        train_ds_len = int(len(ds) * train_ratio)
+        train_ds.append(Subset(ds, np.arange(0, train_ds_len, 1)))
+        val_ds.append(Subset(ds, np.arange(train_ds_len, len(ds), 1)))
+    train_ds = ConcatDataset(train_ds)
+    val_ds = ConcatDataset(val_ds)
+    print(len(train_ds), len(val_ds))
+    return train_ds, val_ds
+
+def load_test_ds(args):
+    test_ds = [MouseDatasetSegNewBehav(file_id=args.file_id, segment_num=args.segment_num, seg_idx=i, data_split="test",
+                               vid_type=args.vid_type, seq_len=args.seq_len, predict_offset=1,
+                                       behav_mode=args.behav_mode, norm_mode="01")
+               for i in range(args.segment_num)]
+    test_ds = ConcatDataset(test_ds)
+    return test_ds
+
+
+# default is smoothing with 2 second, 48 ms per frame
+def smoothing_with_np_conv(nsp, size=int(2000/48)):
+    np_conv_res = []
+    for i in range(nsp.shape[1]):
+        np_conv_res.append(np.convolve(nsp[:, i], np.ones(size)/size, mode="same"))
+    np_conv_res = np.transpose(np.array(np_conv_res))
+    return np_conv_res

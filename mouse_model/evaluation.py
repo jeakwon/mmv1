@@ -65,3 +65,4 @@ def evaluate_model(model, weights_path, dataset, device):
             pred_all.append(pred.cpu().numpy())
 
     return np.concatenate(pred_all, axis=0), np.concatenate(ground_truth_all, axis=0)
+
