@@ -346,22 +346,6 @@ class MouseDatasetSegNewBehavNanInterp(Dataset):
         
         return current_frame, current_behavior_var, neural_spikes
 
-def load_train_val_ds(args):
-    ds_list = [MouseDatasetSegNewBehav(file_id=args.file_id, segment_num=args.segment_num, seg_idx=i, data_split="train",
-                               vid_type=args.vid_type, seq_len=args.seq_len, predict_offset=1,
-                                       behav_mode=args.behav_mode, norm_mode="01")
-               for i in range(args.segment_num)]
-    train_ds, val_ds = [], []
-    for ds in ds_list:
-        train_ratio = 0.8
-        train_ds_len = int(len(ds) * train_ratio)
-        train_ds.append(Subset(ds, np.arange(0, train_ds_len, 1)))
-        val_ds.append(Subset(ds, np.arange(train_ds_len, len(ds), 1)))
-    train_ds = ConcatDataset(train_ds)
-    val_ds = ConcatDataset(val_ds)
-    print(len(train_ds), len(val_ds))
-    return train_ds, val_ds
-
 # default is smoothing with 2 second, 48 ms per frame
 def smoothing_with_np_conv(nsp, size=int(2000/48)):
     np_conv_res = []
@@ -383,7 +367,6 @@ def load_train_val_ds(args):
         val_ds.append(Subset(ds, np.arange(train_ds_len, len(ds), 1)))
     train_ds = ConcatDataset(train_ds)
     val_ds = ConcatDataset(val_ds)
-    print(len(train_ds), len(val_ds))
     return train_ds, val_ds
 
 def load_test_ds(args):
