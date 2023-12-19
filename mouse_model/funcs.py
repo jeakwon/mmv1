@@ -110,3 +110,28 @@ def train_model(model, device, args):
         print("End epoch", epoch)
 
     return train_loss_list, val_loss_list
+
+def evaluate_model(model, weights_path, dataset, device):
+
+    dl = DataLoader(dataset=dataset, batch_size=256, shuffle=False, num_workers=4)
+
+    model.load_state_dict(torch.load(weights_path))
+
+    ground_truth_all = []
+    pred_all = []
+
+    model.eval()
+
+    with torch.no_grad():
+
+        for (image, behav, spikes) in dl:
+
+            image = image.to(device)
+            behav = behav.to(device)
+
+            pred = model(image, behav)
+
+            ground_truth_all.append(spikes.numpy())
+            pred_all.append(pred.cpu().numpy())
+
+    return np.concatenate(pred_all, axis=0), np.concatenate(ground_truth_all, axis=0)
