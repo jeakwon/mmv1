@@ -110,7 +110,7 @@ def train_model(model, device, args):
                 break
 
         minutes = (time.time()-start_time)/60
-        print(f'Epoch: {epoch:4}/{args.epochs:4} | Time: {minutes:.0f} min | Loss Train/Valid: {epoch_train_loss:.3f}/{epoch_val_spike_loss:.3f} |', save_train_model, save_valid_model)
+        print(f'Epoch: {epoch:4}/{args.epochs:4} | Time: {minutes:6.2f} min | Loss Train/Valid: {epoch_train_loss:.3f}/{epoch_val_spike_loss:.3f} |', save_train_model, save_valid_model)
     print('Stop training (Epoch Stopped)')
 
     return train_loss_list, val_loss_list
