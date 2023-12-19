@@ -67,10 +67,12 @@ def train_model(model, device, args):
         # print("Epoch {} train loss: {}".format(epoch, epoch_train_loss))
 
         if epoch_train_spike_loss < best_train_spike_loss:
-
-            print("save train model at epoch", epoch)
+            save_train_model = 'Train_model_saved'
+            # print("save train model at epoch", epoch)
             torch.save(model.state_dict(), args.best_train_path)
             best_train_spike_loss = epoch_train_spike_loss
+        else:
+            save_train_model = ''
 
         model.eval()
 
@@ -96,18 +98,19 @@ def train_model(model, device, args):
 
         if epoch_val_spike_loss < best_val_spike_loss:
             ct = 0
-
-            print("save val model at epoch", epoch)
+            save_valid_model = 'Valid_model_saved'
+            # print("save val model at epoch", epoch)
             torch.save(model.state_dict(), args.best_val_path)
             best_val_spike_loss = epoch_val_spike_loss
         else:
+            save_valid_model = ''
             ct += 1
             if ct >=5:
                 print('Stop training (Early Stopped)')
                 break
 
         minutes = (time.time()-start_time)/60
-        print(f'Epoch: {epoch}/{args.epochs} | Time: {minutes:.0f} min | Loss Train/Valid: {epoch_train_loss:.3f}/{epoch_val_spike_loss:.3f}', 'Saved' if ct==0 else '')
+        print(f'Epoch: {epoch}/{args.epochs} | Time: {minutes:.0f} min | Loss Train/Valid: {epoch_train_loss:.3f}/{epoch_val_spike_loss:.3f}', save_train_model, save_valid_model)
     print('Stop training (Epoch Stopped)')
 
     return train_loss_list, val_loss_list
