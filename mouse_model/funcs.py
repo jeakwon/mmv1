@@ -1,3 +1,4 @@
+import time
 import numpy as np
 
 import torch
@@ -28,10 +29,9 @@ def train_model(model, device, args):
 
     for epoch in range(args.epochs):
 
-        print("Start epoch", epoch)
+        start_time = time.time()
 
         model.train()
-
         epoch_train_loss, epoch_train_spike_loss = 0, 0
 
         for (image, behav, spikes) in train_dataloader:
@@ -64,7 +64,7 @@ def train_model(model, device, args):
 
         train_loss_list.append(epoch_train_loss)
 
-        print("Epoch {} train loss: {}".format(epoch, epoch_train_loss))
+        # print("Epoch {} train loss: {}".format(epoch, epoch_train_loss))
 
         if epoch_train_spike_loss < best_train_spike_loss:
 
@@ -92,7 +92,7 @@ def train_model(model, device, args):
 
         val_loss_list.append(epoch_val_spike_loss)
 
-        print("Epoch {} val loss: {}".format(epoch, epoch_val_spike_loss))
+        # print("Epoch {} val loss: {}".format(epoch, epoch_val_spike_loss))
 
         if epoch_val_spike_loss < best_val_spike_loss:
             ct = 0
@@ -103,11 +103,12 @@ def train_model(model, device, args):
         else:
             ct += 1
             if ct >=5:
-                print('stop training')
+                print('Stop training (Early Stopped)')
                 break
 
-
-        print("End epoch", epoch)
+        minutes = (time.time()-start_time)/60
+        print(f'Epoch: {epoch}/{args.epochs} | Time: {minutes:.0f} min | Loss Train/Valid: {epoch_train_loss:.3f}/{epoch_val_spike_loss:.3f}', 'Saved' if ct==0 else '')
+    print('Stop training (Epoch Stopped)')
 
     return train_loss_list, val_loss_list
 
