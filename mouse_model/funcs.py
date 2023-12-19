@@ -14,8 +14,8 @@ def train_model(model, device, args):
 
     train_ds, val_ds = load_train_val_ds(args)
 
-    train_dataloader = DataLoader(dataset=train_ds, batch_size=args.batch_size, shuffle=True, num_workers=4)
-    val_dataloader = DataLoader(dataset=val_ds, batch_size=args.batch_size, shuffle=False, num_workers=4)
+    train_dataloader = DataLoader(dataset=train_ds, batch_size=args.batch_size, shuffle=True, num_workers=2)
+    val_dataloader = DataLoader(dataset=val_ds, batch_size=args.batch_size, shuffle=False, num_workers=2)
 
     optimizer = torch.optim.Adam(model.parameters(), lr=args.learning_rate)
 
@@ -110,7 +110,7 @@ def train_model(model, device, args):
                 break
 
         minutes = (time.time()-start_time)/60
-        print(f'Epoch: {epoch}/{args.epochs} | Time: {minutes:.0f} min | Loss Train/Valid: {epoch_train_loss:.3f}/{epoch_val_spike_loss:.3f}', save_train_model, save_valid_model)
+        print(f'Epoch: {epoch}/{args.epochs} | Time: {minutes:.0f} min | Loss Train/Valid: {epoch_train_loss:.3f}/{epoch_val_spike_loss:.3f} |', save_train_model, save_valid_model)
     print('Stop training (Epoch Stopped)')
 
     return train_loss_list, val_loss_list
