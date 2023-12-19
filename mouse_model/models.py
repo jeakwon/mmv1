@@ -122,6 +122,7 @@ class LSTMPerNeuronCombiner(nn.Module):
         self.lstm_net = nn.GRU(input_size=num_neurons*3, hidden_size=hidden_size, num_layers=1, batch_first=True)
         self.fc = nn.Linear(hidden_size, num_neurons)
         self.softplus = nn.Softplus() # we could also do relu or elu offset by 1
+        self.shifter=shifter
 
     def forward(self, images, behav):
         if self.shifter:
