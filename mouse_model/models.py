@@ -109,7 +109,7 @@ class BehavEncoder(nn.Module):
 
 class LSTMPerNeuronCombiner(nn.Module):
 
-    def __init__(self, num_neurons, behav_dim, k1, k2, k3, seq_len, hidden_size=512):
+    def __init__(self, num_neurons, behav_dim, k1, k2, k3, seq_len, hidden_size=512, shifter=True):
 
         super().__init__()
 
@@ -124,7 +124,7 @@ class LSTMPerNeuronCombiner(nn.Module):
         self.softplus = nn.Softplus() # we could also do relu or elu offset by 1
 
     def forward(self, images, behav):
-        if args.shifter:
+        if self.shifter:
             bs = images.size()[0]
             behav_shifter = torch.concat((behav[...,4].unsqueeze(-1),   # theta
                                           behav[...,3].unsqueeze(-1),   # phi
