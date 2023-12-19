@@ -3,7 +3,7 @@ import torch.nn as nn
 from torch.utils.data import DataLoader
 from .data_utils_new import load_train_val_ds
 
-def train_model(model), args:
+def train_model(model, args):
 
     torch.manual_seed(args.seed)
     if torch.cuda.is_available():
