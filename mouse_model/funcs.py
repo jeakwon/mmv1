@@ -1,0 +1,110 @@
+import torch
+import torch.nn as nn
+from torch.utils.data import DataLoader
+from .data_utils_new import load_train_val_ds
+
+def train_model(model), args:
+
+    torch.manual_seed(args.seed)
+    if torch.cuda.is_available():
+        torch.cuda.manual_seed(args.seed)
+
+    train_ds, val_ds = load_train_val_ds(args)
+
+    train_dataloader = DataLoader(dataset=train_ds, batch_size=args.batch_size, shuffle=True, num_workers=4)
+    val_dataloader = DataLoader(dataset=val_ds, batch_size=args.batch_size, shuffle=False, num_workers=4)
+
+    optimizer = torch.optim.Adam(model.parameters(), lr=args.learning_rate)
+
+    best_train_spike_loss = np.inf
+    best_val_spike_loss = np.inf
+    train_loss_list = []
+    val_loss_list = []
+
+    # start training
+    ct = 0
+
+    for epoch in range(args.epochs):
+
+        print("Start epoch", epoch)
+
+        model.train()
+
+        epoch_train_loss, epoch_train_spike_loss = 0, 0
+
+        for (image, behav, spikes) in train_dataloader:
+
+            image, behav, spikes = image.to(device), behav.to(device), spikes.to(device)
+
+            pred = model(image, behav)
+
+            spike_loss = nn.functional.poisson_nll_loss(pred, spikes, reduction='mean', log_input=False)
+
+            l1_reg, l1_reg_num_param = 0.0, 0
+            for name, param in model.named_parameters():
+                if name == "behav_encoder.layers.1.weight":
+                    l1_reg += param.abs().sum()
+                    l1_reg_num_param += param.shape[0]*param.shape[1]
+            l1_reg /= l1_reg_num_param
+
+            total_loss = spike_loss + args.l1_reg_w * l1_reg
+
+            epoch_train_loss += total_loss.item()
+            epoch_train_spike_loss += spike_loss.item()
+
+            optimizer.zero_grad()
+            total_loss.backward()
+            optimizer.step()
+
+
+        epoch_train_loss = epoch_train_loss / len(train_dataloader)
+        epoch_train_spike_loss = epoch_train_spike_loss / len(train_dataloader)
+
+        train_loss_list.append(epoch_train_loss)
+
+        print("Epoch {} train loss: {}".format(epoch, epoch_train_loss))
+
+        if epoch_train_spike_loss < best_train_spike_loss:
+
+            print("save train model at epoch", epoch)
+            torch.save(model.state_dict(), args.best_train_path)
+            best_train_spike_loss = epoch_train_spike_loss
+
+        model.eval()
+
+        epoch_val_spike_loss = 0
+
+        with torch.no_grad():
+
+            for (image, behav, spikes) in val_dataloader:
+
+                image, behav, spikes = image.to(device), behav.to(device), spikes.to(device)
+
+                pred = model(image, behav)
+
+                loss = nn.functional.poisson_nll_loss(pred, spikes, reduction='mean', log_input=False)
+
+                epoch_val_spike_loss += loss.item()
+
+        epoch_val_spike_loss = epoch_val_spike_loss / len(val_dataloader)
+
+        val_loss_list.append(epoch_val_spike_loss)
+
+        print("Epoch {} val loss: {}".format(epoch, epoch_val_spike_loss))
+
+        if epoch_val_spike_loss < best_val_spike_loss:
+            ct = 0
+
+            print("save val model at epoch", epoch)
+            torch.save(model.state_dict(), args.best_val_path)
+            best_val_spike_loss = epoch_val_spike_loss
+        else:
+            ct += 1
+            if ct >=5:
+                print('stop training')
+                break
+
+
+        print("End epoch", epoch)
+
+    return train_loss_list, val_loss_list
