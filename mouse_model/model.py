@@ -46,7 +46,7 @@ def size_helper(in_length, kernel_size, padding=0, dilation=1, stride=1):
     res = in_length + 2 * padding - dilation * (kernel_size - 1) - 1
     res /= stride
     res += 1
-    return npfloor(res)
+    return np.floor(res)
 
 # CNN, the last fully connected layer maps to output_dim
 class VisualEncoder(nn.Module):
