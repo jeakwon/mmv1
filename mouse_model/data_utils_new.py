@@ -362,15 +362,6 @@ def load_train_val_ds(args):
     print(len(train_ds), len(val_ds))
     return train_ds, val_ds
 
-def load_test_ds(args):
-    test_ds = [MouseDatasetSegNewBehav(file_id=args.file_id, segment_num=args.segment_num, seg_idx=i, data_split="test",
-                               vid_type=args.vid_type, seq_len=args.seq_len, predict_offset=1,
-                                       behav_mode=args.behav_mode, norm_mode="01")
-               for i in range(args.segment_num)]
-    test_ds = ConcatDataset(test_ds)
-    return test_ds
-
-
 # default is smoothing with 2 second, 48 ms per frame
 def smoothing_with_np_conv(nsp, size=int(2000/48)):
     np_conv_res = []
