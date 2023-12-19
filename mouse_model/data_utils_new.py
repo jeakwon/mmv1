@@ -1,6 +1,6 @@
 import numpy as np
 import torch
-from torch.utils.data import Dataset
+from torch.utils.data import Dataset, ConcatDataset
 
 def normalize_movie(movie):
     """Normalize the range of gray levels in a movie"""
@@ -378,3 +378,27 @@ def smoothing_with_np_conv(nsp, size=int(2000/48)):
         np_conv_res.append(np.convolve(nsp[:, i], np.ones(size)/size, mode="same"))
     np_conv_res = np.transpose(np.array(np_conv_res))
     return np_conv_res
+
+def load_train_val_ds(args):
+    ds_list = [MouseDatasetSegNewBehav(file_id=args.file_id, segment_num=args.segment_num, seg_idx=i, data_split="train",
+                               vid_type=args.vid_type, seq_len=args.seq_len, predict_offset=1,
+                                       behav_mode=args.behav_mode, norm_mode="01")
+               for i in range(args.segment_num)]
+    train_ds, val_ds = [], []
+    for ds in ds_list:
+        train_ratio = 0.8
+        train_ds_len = int(len(ds) * train_ratio)
+        train_ds.append(Subset(ds, np.arange(0, train_ds_len, 1)))
+        val_ds.append(Subset(ds, np.arange(train_ds_len, len(ds), 1)))
+    train_ds = ConcatDataset(train_ds)
+    val_ds = ConcatDataset(val_ds)
+    print(len(train_ds), len(val_ds))
+    return train_ds, val_ds
+
+def load_test_ds(args):
+    test_ds = [MouseDatasetSegNewBehav(file_id=args.file_id, segment_num=args.segment_num, seg_idx=i, data_split="test",
+                               vid_type=args.vid_type, seq_len=args.seq_len, predict_offset=1,
+                                       behav_mode=args.behav_mode, norm_mode="01")
+               for i in range(args.segment_num)]
+    test_ds = ConcatDataset(test_ds)
+    return test_ds
