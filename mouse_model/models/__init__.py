@@ -1,1 +1,1 @@
-from mouse_model.xu_models import LSTMPerNeuronCombiner
+from .xu_models import LSTMPerNeuronCombiner
