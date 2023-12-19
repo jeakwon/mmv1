@@ -1,6 +1,6 @@
 import numpy as np
 import torch
-from torch.utils.data import Dataset, ConcatDataset
+from torch.utils.data import Dataset, Subset, ConcatDataset
 
 def normalize_movie(movie):
     """Normalize the range of gray levels in a movie"""
