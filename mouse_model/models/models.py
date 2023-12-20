@@ -12,8 +12,7 @@ class ResizeAndPad(nn.Module):
         self.output_size = output_size
 
     def forward(self, x):
-        # Assuming x is of shape [1, 1, 60, 80]
-        img = x.squeeze(0)  # Remove batch dimension, now [1, 60, 80]
+        # Assuming x is of shape [1, 60, 80]
         img = transforms.ToPILImage()(img)
 
         # Resize while maintaining aspect ratio
