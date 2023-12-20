@@ -1,5 +1,6 @@
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 import torchvision.transforms as transforms
 from PIL import Image, ImageOps
 from torchvision.models import vit_b_16
@@ -7,37 +8,37 @@ import numpy as np
 from kornia.geometry.transform import get_affine_matrix2d, warp_affine
 
 class ResizeAndPad(nn.Module):
-    def __init__(self, output_size):
+    def __init__(self, output_size=(224, 224)):
         super(ResizeAndPad, self).__init__()
         self.output_size = output_size
 
     def forward(self, x):
         # x is of shape [n, 1, 60, 80]
-        n = x.shape[0]  # Get the batch size
-        processed_imgs = []
+        n, c, h, w = x.size()
 
-        for i in range(n):
-            img = x[i].squeeze(0)  # Process each image individually
-            img = transforms.ToPILImage()(img)
+        # Determine new height and width
+        new_h, new_w = self.output_size
+        aspect_ratio = h / w
+        if aspect_ratio > 1:  # height is greater than width
+            new_w = int(new_h / aspect_ratio)
+        else:  # width is greater than height
+            new_h = int(new_w * aspect_ratio)
 
-            # Resize the image
-            img.thumbnail((self.output_size, self.output_size), Image.ANTIALIAS)
+        # Resize the image
+        resized_imgs = F.interpolate(x, size=(new_h, new_w), mode='bilinear', align_corners=False)
 
-            # Calculate padding
-            delta_width = self.output_size - img.width
-            delta_height = self.output_size - img.height
-            padding = (delta_width // 2, delta_height // 2, delta_width - (delta_width // 2), delta_height - (delta_height // 2))
+        # Padding
+        # Calculate padding for height and width
+        pad_h1 = (self.output_size[0] - new_h) // 2
+        pad_h2 = self.output_size[0] - new_h - pad_h1
+        pad_w1 = (self.output_size[1] - new_w) // 2
+        pad_w2 = self.output_size[1] - new_w - pad_w1
 
-            # Add padding and convert to 3-channel RGB
-            img = ImageOps.expand(img, padding)
-            img = img.convert('RGB')
+        # Apply padding
+        padded_imgs = F.pad(resized_imgs, (pad_w1, pad_w2, pad_h1, pad_h2), 'constant', 0)
 
-            # Convert back to tensor
-            img = transforms.ToTensor()(img)
-            processed_imgs.append(img)
-
-        # Stack all images back into a single tensor
-        return torch.stack(processed_imgs).to(x.device)
+        # Expand to 3 channels
+        return padded_imgs.expand(-1, 3, -1, -1)
 
 class Shifter(nn.Module):
     def __init__(self, input_dim=4, output_dim=3, hidden_dim=256, seq_len=8):
@@ -100,12 +101,12 @@ class VisualEncoder(nn.Module):
         out_shape_1 = size_helper(in_length=out_shape_1, kernel_size=k3, stride=2)
         self.output_shape = (int(out_shape_0), int(out_shape_1)) # shape of the final feature map
 
-        rap = ResizeAndPad(224)
-        vit = vit_b_16(pretrained=True)
-        vit.heads = nn.Linear(768, 68)
+        self.rap = ResizeAndPad(output_size=(224, 224))
+        self.vit = vit_b_16(pretrained=True)
+        self.vit.heads = nn.Linear(768, 68)
         self.layers = nn.Sequential(
-            rap, 
-            vit,
+            self.rap, 
+            self.vit,
         )
 
 
