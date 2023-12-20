@@ -13,7 +13,7 @@ class ResizeAndPad(nn.Module):
 
     def forward(self, x):
         # Assuming x is of shape [1, 60, 80]
-        img = transforms.ToPILImage()(img)
+        img = transforms.ToPILImage()(x)
 
         # Resize while maintaining aspect ratio
         img.thumbnail((self.output_size, self.output_size), Image.ANTIALIAS)
