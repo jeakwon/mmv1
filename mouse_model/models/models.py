@@ -37,7 +37,7 @@ class ResizeAndPad(nn.Module):
             processed_imgs.append(img)
 
         # Stack all images back into a single tensor
-        return torch.stack(processed_imgs)
+        return torch.stack(processed_imgs).to(x.device)
 
 class Shifter(nn.Module):
     def __init__(self, input_dim=4, output_dim=3, hidden_dim=256, seq_len=8):
