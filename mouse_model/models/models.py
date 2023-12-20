@@ -12,27 +12,32 @@ class ResizeAndPad(nn.Module):
         self.output_size = output_size
 
     def forward(self, x):
-        # Assuming x is of shape [1, 60, 80]
-        img = transforms.ToPILImage()(x)
+        # x is of shape [n, 1, 60, 80]
+        n = x.shape[0]  # Get the batch size
+        processed_imgs = []
 
-        # Resize while maintaining aspect ratio
-        img.thumbnail((self.output_size, self.output_size), Image.ANTIALIAS)
+        for i in range(n):
+            img = x[i].squeeze(0)  # Process each image individually
+            img = transforms.ToPILImage()(img)
 
-        # Calculate padding
-        delta_width = self.output_size - img.width
-        delta_height = self.output_size - img.height
-        padding = (delta_width // 2, delta_height // 2, delta_width - (delta_width // 2), delta_height - (delta_height // 2))
+            # Resize the image
+            img.thumbnail((self.output_size, self.output_size), Image.ANTIALIAS)
 
-        # Add padding and convert to 3-channel RGB
-        img = ImageOps.expand(img, padding)
-        img = img.convert('RGB')
+            # Calculate padding
+            delta_width = self.output_size - img.width
+            delta_height = self.output_size - img.height
+            padding = (delta_width // 2, delta_height // 2, delta_width - (delta_width // 2), delta_height - (delta_height // 2))
 
-        # Convert back to tensor
-        img = transforms.ToTensor()(img)
+            # Add padding and convert to 3-channel RGB
+            img = ImageOps.expand(img, padding)
+            img = img.convert('RGB')
 
-        # Add back the batch dimension
-        img = img.unsqueeze(0)
-        return img
+            # Convert back to tensor
+            img = transforms.ToTensor()(img)
+            processed_imgs.append(img)
+
+        # Stack all images back into a single tensor
+        return torch.stack(processed_imgs)
 
 class Shifter(nn.Module):
     def __init__(self, input_dim=4, output_dim=3, hidden_dim=256, seq_len=8):
