@@ -103,6 +103,8 @@ class VisualEncoder(nn.Module):
 
         self.rap = ResizeAndPad(output_size=(224, 224))
         self.vit = vit_b_16(pretrained=True)
+        for param in self.vit.parameters():
+            param.requires_grad = False
         self.vit.heads = nn.Linear(768, 68)
         self.layers = nn.Sequential(
             self.rap, 
